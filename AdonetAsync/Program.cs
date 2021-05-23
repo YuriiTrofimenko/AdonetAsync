@@ -8,7 +8,6 @@ namespace AdonetAsync
 {
     class Program
     {
-        static bool animation = true;
         static void Main(string[] args)
         {
             /* for (int i = 0; i < 10; i++)
@@ -28,7 +27,7 @@ namespace AdonetAsync
             {
                 connection.Open();
                 // Console.WriteLine(LongDbTask(connection));
-                LongDbTask(connection);
+                Console.WriteLine(LongDbTask(connection).Result);
             }
         }
         static long Fib (long n) {
@@ -48,32 +47,19 @@ namespace AdonetAsync
             }
         }
         
-        static void LongDbTask(SqlConnection connection)
+        static async Task<int> LongDbTask(SqlConnection connection)
         {
             SqlCommand command = connection.CreateCommand();
             // command.CommandText = "SELECT * FROM [Product] WHERE [price] = 50.99 OR [quantity] = 70";
             command.CommandText = "sp_select_products";
             command.CommandType = CommandType.StoredProcedure;
-            /* Task<object> task = command.ExecuteScalarAsync();
-            while (!task.IsCompleted)
+            // Task<object> task = command.ExecuteScalarAsync();
+            /* while (!task.IsCompleted)
             {
                 Console.Write(".");
                 Thread.Sleep(1000);
             } */
-            animation = true;
-            command.BeginExecuteReader(ar =>
-            {
-                SqlCommand command = (SqlCommand)ar.AsyncState;
-                SqlDataReader reader =  command.EndExecuteReader(ar);
-                Console.WriteLine(reader.Read());
-                animation = false;
-                Console.WriteLine(reader.GetInt32(0));
-            }, command);
-            while (animation)
-            {
-                Console.Write(".");
-                Thread.Sleep(1000);
-            }
+            return (int)await command.ExecuteScalarAsync();
         }
     }
 }
