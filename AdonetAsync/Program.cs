@@ -2,11 +2,13 @@
 using System.Data;
 using System.Data.SqlClient;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace AdonetAsync
 {
     class Program
     {
+        static bool animation = true;
         static void Main(string[] args)
         {
             /* for (int i = 0; i < 10; i++)
@@ -25,7 +27,8 @@ namespace AdonetAsync
             using (SqlConnection connection = new SqlConnection(@"Data Source=192.168.0.106,1433;Initial Catalog=BigDB;Integrated Security=False;user id=sa;password=Passw0rd%"))
             {
                 connection.Open();
-                Console.WriteLine(LongDbTask(connection));
+                // Console.WriteLine(LongDbTask(connection));
+                LongDbTask(connection);
             }
         }
         static long Fib (long n) {
@@ -45,18 +48,32 @@ namespace AdonetAsync
             }
         }
         
-        static int LongDbTask(SqlConnection connection)
+        static void LongDbTask(SqlConnection connection)
         {
             SqlCommand command = connection.CreateCommand();
             // command.CommandText = "SELECT * FROM [Product] WHERE [price] = 50.99 OR [quantity] = 70";
             command.CommandText = "sp_select_products";
             command.CommandType = CommandType.StoredProcedure;
-            int totalCount = 0;
-            for (int i = 0; i < 1; i++)
+            /* Task<object> task = command.ExecuteScalarAsync();
+            while (!task.IsCompleted)
             {
-                totalCount += (int)command.ExecuteScalar();
+                Console.Write(".");
+                Thread.Sleep(1000);
+            } */
+            animation = true;
+            command.BeginExecuteReader(ar =>
+            {
+                SqlCommand command = (SqlCommand)ar.AsyncState;
+                SqlDataReader reader =  command.EndExecuteReader(ar);
+                Console.WriteLine(reader.Read());
+                animation = false;
+                Console.WriteLine(reader.GetInt32(0));
+            }, command);
+            while (animation)
+            {
+                Console.Write(".");
+                Thread.Sleep(1000);
             }
-            return totalCount;
         }
     }
 }
